@@ -1,0 +1,86 @@
+---
+title: "DataCleaningHeartAttack"
+author: "Maria Blanco González-Mohíno y Eloisa Baquero Candau"
+date: "`r Sys.Date()`"
+output: 
+  bookdown::pdf_book:
+  number_sections: true
+  toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Import de librerias
+library(readr)
+library(dplyr)
+```
+
+
+# Descripción del dataset
+
+Fuente de este dataset: https://www.kaggle.com/datasets/rashikrahmanpritom/heart-attack-analysis-prediction-dataset/discussion/248773
+Fuente de Kaggle: https://archive.ics.uci.edu/dataset/45/heart+disease
+
+## Variables del dataset
+
+* **Age**: Edad del paciente.
+* **Sex**: Sexo del paciente.
+* **cp**: Dolor torácico tipo (1 = angina típica; 2 = angina atípica; 3 = dolor no anginoso; 4 = asintomático).
+* **ca**: Número de grandes vasos sanguíneos (0-3).
+* **trtbps**: Presión arterial en reposo (en mm Hg).
+* **chol**: colesterol en mg/dl obtenido a través del sensor de IMC.
+* **fbs**: (glucemia en ayunas > 120 mg/dl) (1 = verdadero; 0 = falso).
+* **rest_ecg**: resultados electrocardiográficos en reposo (0 = normal; 1 = presenta anomalía de la onda ST-T (inversiones de la onda T y/o elevación o depresión del ST de > 0,05 mV); 2 = muestra hipertrofia ventricular izquierda probable o definida según los criterios de Estes).
+* **thalach**: frecuencia cardiaca máxima alcanzada
+* **exng**: Angina inducida por el ejercicio (1 = si; 0 = no).
+* **oldpeak**: Depresión del ST inducida por el ejercicio en relación con el reposo.
+* **slp**: Slope / Bajada.
+* **caa**: Número de vasos mayores (0-3) coloreados por flouroscopia.
+* **thall**: No hay información al respecto.
+* **output**: 0 = menor probabilidad de infarto; 1 = mayor probabilidad de infarto
+
+
+## ¿Por qué es importante? y ¿qué pregunta responde?
+
+
+# Exploración de los datos
+
+```{r}
+heart <- read_csv("../data/heart.csv", show_col_types = FALSE)
+head(heart, 5)
+```
+
+
+```{r}
+str(heart)
+```
+
+
+```{r}
+summary(heart)
+```
+
+## Limpieza de los datos
+
+Búsqueda de valores nulos por columnas.
+```{r}
+sapply(heart, function(x) sum(is.na(x)))
+```
+
+Enfocandonos en la naturaleza del dataset, hay algunos casos especiales que también se consideraran valores nulos
+
+```{r}
+unique(heart$sex)
+```
+
+## Visualización de variables de interes
+
+
+```{r}
+hist(heart$age)
+```
+
+
+```{r}
+```
