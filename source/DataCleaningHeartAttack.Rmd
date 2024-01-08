@@ -8,12 +8,24 @@ output:
   toc: yes
 ---
 
+
+
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 # Import de librerias
 library(readr)
 library(dplyr)
+library(skimr)
+library(gridExtra)
+#Instalación de paquetes para establecer la correlación.
+library(corrplot)
+library(ggplot2)
+library(ggthemes)
+
+
 ```
 
 
@@ -22,7 +34,18 @@ library(dplyr)
 Fuente de este dataset: https://www.kaggle.com/datasets/rashikrahmanpritom/heart-attack-analysis-prediction-dataset/discussion/248773
 Fuente de Kaggle: https://archive.ics.uci.edu/dataset/45/heart+disease
 
+El conjunto de datos heart.csv proviene de la base de datos disponible en la plataforma Kaggle: https://www.kaggle.com/datasets/rashikrahmanpritom/heart-attack-analysis-prediction-dataset/discussion/248773
+
+Este conjunto de datos contiene información sobre varias caracteristicas médicas relacionadas o que pueden afectar en la aparición de enfermedades cardiacas, incluyendo también la variable de si la persona ha sufrido imparto o no. 
+
+A traves de estes conjunto de datos se puedes estudiar los factores que influyen en la posibilidad de sufrir infarto de corazón con la idea de poder anticiparse y poder envitarlo en alguna medida.
+
+
 ## Variables del dataset
+
+Este conjunto de datos esta formado por 14 variables distintas y dispone de 303 registros.
+
+Las principales variables de este conjunto de datos son:
 
 * **Age**: Edad del paciente.
 * **Sex**: Sexo del paciente.
@@ -43,6 +66,8 @@ Fuente de Kaggle: https://archive.ics.uci.edu/dataset/45/heart+disease
 
 ## ¿Por qué es importante? y ¿qué pregunta responde?
 
+Las enfermedades cardiovasculares (ECV) son la principal causa de muerte a nivel mundial y se estima que cobran 17,9 millones de vidas cada año, lo que representa el 31% de todas las muertes en todo el mundo. Cuatro de cada cinco muertes por ECV se deben a ataques cardíacos y accidentes cerebrovasculares, y un tercio de estas muertes ocurren prematuramente en personas menores de 70 años. La insuficiencia cardíaca es un evento común causado por enfermedades cardiovasculares y este conjunto de datos contiene 11 características que pueden usarse para predecir una posible enfermedad cardíaca.
+Las personas con enfermedades cardiovasculares o que tienen un alto riesgo cardiovascular (debido a la presencia de uno o más factores de riesgo como hipertensión, diabetes, hiperlipidemia o enfermedad ya establecida) necesitan una detección y un manejo tempranos en los que un modelo de aprendizaje automático puede ser de gran ayuda.
 
 # Exploración de los datos
 
@@ -53,12 +78,14 @@ head(heart, 5)
 
 
 ```{r}
+dim(heart)
 str(heart)
 ```
 
 
 ```{r}
 summary(heart)
+skim(heart)
 ```
 
 ## Limpieza de los datos
@@ -73,8 +100,232 @@ Enfocandonos en la naturaleza del dataset, hay algunos casos especiales que tamb
 ```{r}
 unique(heart$sex)
 ```
+## CONVERTIR LAS VARIABLES A FACTOR:
+
++ **Conversión de datos (Será útil en la visualización de datos).**
+
+```{r}
+data<- heart %>%
+   mutate(sex = if_else(sex ==1,"MALE","FEMALE"),
+         fbs = if_else(fbs ==1,">120","<=120"),
+         exng = if_else(exng ==1,"YES","NO"),
+         cp = if_else(cp==1,"ATYPICAL ANGINA",
+                     if_else(cp==2,"NON-ANGINAL PAIN","ASYMPTOTIC")),
+         restecg = if_else(restecg==0,"Normal",
+                         if_else(restecg==1,"ABNORMALITY","PROBABLE OF DEFINITE")),
+         slp = as.factor(slp),
+         caa = as.factor(caa),
+         thall = as.factor(thall),
+         output = if_else(output==1,"YES","NO")
+         ) %>%
+mutate_if(is.character,as.factor)%>%
+dplyr::select(output,sex,fbs,exng,cp,restecg,slp,caa,thall, everything())
+```
+
+
+
+```{r}
+# Convertimos el target a factor
+heart <- heart %>%
+    mutate(output = as.factor(output))
+```
+
 
 ## Visualización de variables de interes
+
+### ANALISIS UNIVARIANTE
+
++ **VARIABLES CATEGÓRICAS**
+
+Vamos a estudiar la distribución de las variables categóricas mediantes diagramas de barras:
+
+```{r}
+bp1 <- ggplot(data,aes(x=factor(sex)))+geom_bar(fill = "blue")+xlab("Sexo")
+bp2 <- ggplot(data,aes(x=factor(cp)))+geom_bar(fill = "blue")+xlab("cp")
+bp3 <- ggplot(data,aes(x=factor(fbs)))+geom_bar(fill = "blue")+xlab("fbs")
+bp4 <- ggplot(data,aes(x=factor(restecg)))+geom_bar(fill = "blue")+xlab("restecg")
+bp5 <- ggplot(data,aes(x=factor(exng)))+geom_bar(fill = "black")+xlab("exng")
+bp6 <- ggplot(data,aes(x=factor(slp)))+geom_bar(fill = "black")+xlab("slp")
+bp7 <- ggplot(data,aes(x=factor(caa)))+geom_bar(fill = "black")+xlab("caa")
+bp8 <- ggplot(data,aes(x=factor(thall)))+geom_bar(fill = "black")+xlab("thall")
+grid.arrange(bp1,bp2,bp3,bp4,bp5,bp6,bp7,bp8, nrow=3)
+```
+A continuación calculamos la frecuencia de cada variable categórica.
+
+```{r}
+prop.table(table(data$sex))
+prop.table(table(data$fbs))
+prop.table(table(data$exng))
+prop.table(table(data$sex))
+prop.table(table(data$cp))
+prop.table(table(data$restecg))
+prop.table(table(data$slp))
+prop.table(table(data$cca))
+prop.table(table(data$thall))
+```
+
+
++ **VARIABLES NUMÉRICAS**
+
+```{r}
+den_age <- density(data$age)
+hist1 <- hist(data$age, main = "Histograma y densidad de la edad de los pacientes", col = "gold", freq = FALSE, ylim = c(0,0.050))
+lines(den_age, col = "red", lwd=2)
+
+```
+```{r}
+den_trtbps <- density(data$trtbps)
+hist2 <- hist(data$trtbps, main = "Histograma y densidad de la frecuencia cardiaca máxima", col = "gold", freq = FALSE, ylim = c(0,0.050))
+lines(den_trtbps, col = "red", lwd=2)
+
+```
+
+```{r}
+den_chol <- density(data$chol)
+hist3 <- hist(data$chol, main = "Histograma y densidad del colecterol", col = "gold", freq = FALSE, ylim = c(0,0.050))
+lines(den_chol, col = "red", lwd=2)
+
+```
+
+
+```{r}
+hist1 <- ggplot(data,aes(x=age))+geom_histogram(bins=15,fill='magenta')
+hist2 <- ggplot(data,aes(x=trtbps))+geom_histogram(bins=15,fill='blue')
+hist3 <- ggplot(data,aes(x=chol))+geom_histogram(bins=15,fill='magenta')
+hist4 <- ggplot(data,aes(x=thalachh))+geom_histogram(bins=15,fill='blue')
+hist5 <- ggplot(data,aes(x=oldpeak))+geom_histogram(bins=15,fill='magenta')
+
+grid.arrange(hist2,hist3,hist4,hist5,nrow=3)
+```
+
+
++ **VARIABLE OUTPUT**
+
+A continuación vamos a analizar la variable "ouput"
+
+```{r}
+# Variable output
+heart %>%
+  count(output) %>%
+  ggplot() +        
+  aes(x = output, y = n) +
+  labs(title = "Gráfico de barras para la variable 0utput") + 
+  ylab("Frecuencia absoluta") +
+  geom_bar(aes(fill = output), stat = "identity") +
+  geom_text(aes(label = n), vjust = 0, size = 4)
+```
+
+Gráfico de barras para comparar cuántas personas tienen o no enfermedades cardíacas
+
+```{r}
+ggplot(data , aes(x=output,fill=output))+
+   geom_bar()+
+   xlab("Enfermedades cardiacas")+
+   ylab("Personas")+
+   ggtitle("Detección y ausencia de enfermedades cardíacas")+
+   scale_fill_discrete(name="Heart Disease", labels=c("Ausencia","Presencia"))
+```
+En este conjunto de datos existe mayor cantidad de personas que  han sufrido enfermedades cardiacas que persona que no las han sufrido.
+
+Ahora vamos a encontrar la proporción de personas para cuantificar cuántas de ellas tienen enfermedades cardíacas y cuántas no.
+
+```{r}
+#Finding the proportion of the people to quantify how many of them are having heart disease and how many are not
+prop.table(table(data$output))
+```
+Los datos anteriores cuantifican que el 54,45% de la población está diagnosticada con alguna enfermedad cardíaca mientras que el 45,54% de la población no padece ningún tipo de enfermedad cardíaca.
+
+Vamos a comprobar como se distribuye los grupos de edad en el conjunto de datos.
+
+```{r}
+data %>%
+  group_by(age)%>%
+  count()%>%
+  filter(n>10)%>%
+  ggplot()+
+  geom_col(aes(age,n), fill= 'brown')+
+  ggtitle(" Distribución de la variable Edad")
+```
+
+Existe una gran brecha entre las edades de 45 a 50 años, es posible que las personas en este grupo de edad estén ocupadas y no tengan tiempo para hacerse un chequeo de rutina o puede deberse a su carga de trabajo queman más calorías, por lo que no tuvieron que acudir al médico. Chequeos, donde, como en el grupo de edad entre 56 y 60 años, los participantes pueden deberse a la vejez y necesitan chequeos de salud regulares.
+
+
+Vamos a Comparar de la "presión arterial" y los "diferentes tipos de dolor en el pecho" entre hombres y mujeres:
+
+```{r}
+data%>%
+ ggplot(aes(x=sex, y=trtbps))+
+ geom_boxplot(fill="purple")+
+ xlab('sex')+
+ ylab("Resting_BP")+
+ facet_grid(~cp )
+```
+El diagrama de caja anterior muestra tres tipos de dolor y la presión arterial correspondiente a hombres y mujeres. El rango de presión arterial normal es 120, y por encima de 140 se considera una presión arterial más alta. Si cruza 180 puede causar daños graves.
+
++ Para el dolor *asintótico*, las mujeres tienen una presión arterial promedio más alta que los hombres. En las mujeres podemos encotrar algunos valores por encima de 180, que está muy por encima de lo normal, mientras que los hombres también presentan una presión arterial más alta, pero el máximo está por debajo de 180.
+
++ Para el dolor de tipo *atípico*, tanto hombres como mujeres tienen una presión arterial promedio inferior a 150 pero sigue siendo algo superior en las mujeres. En los hpmbres podemos encontrar algunas presiones más altas, por encima de 150 y algunas incluso por encima de 180, lo cual puede ser muy negativo, lo que significa que este tipo de dolor en el pecho puede ser peligroso. En las mujeres solo encontramos un bajor más extreno por encima de 150.
+
++ Para el dolor *no anginoso*, tanto hombres como mujeres tienen una presión arterial promedio inferior a 150, ninguna de las mujeres tiene una presión arterial más alta, algunos hombres tienen cerca de 180. Por otro lado, algunos hombres han visto una presión arterial baja, por debajo de 100 con este tipo de dolor.
+
+**Evaluación de la relación entre el colesterol y las enfermedades cardíacas**
+
+```{r}
+data%>%
+ ggplot(aes(x=sex, y=chol))+
+ geom_boxplot(fill="orange")+
+ xlab('sex')+
+ ylab("Colecterol")+
+ facet_grid(~output)
+```
+Como se muestra en el diagrama de caja anterior, se muestra la relación entre el rango de colesterol y la presencia de enfermedades cardíacas.
+
+En el diagrama:
++ Menos de 200 en el colecteroles bueno , más de 240 es un colecterol alto por lo que puede ser peligroso.
++ Sí significa presencia de enfermedad cardíaca y
++ No significa ausencia de enfermedad cardíaca.
+
+Por tanto podemos deducir:
+
++ *Sin enfermedad cardíaca:* Aquellos que no han padecido una enfermedad cardíaca tienen un nivel de colesterol promedio por debajo de 250, los hombres tienen menos colesterol, puede deberse a más movimiento físico o menos consumo de alimentos grasos. Además, ninguno de ellos tiene niveles de colesterol elevados.
+
++ *Con presencia de enfermedad cardíaca:* Aquellos que tienen enfermedad cardíaca, el promedio de hombres y mujeres tienen niveles de colesterol en el rango inferior a 250, pero algunos hombres y mujeres tienen valores de colesterol muy altos. En los hombres, algunos valores  supera los 300, lo cual no es una buena señal. En las mujeres algunos valores superan los 400 e incluso a algunas se les detectó un nivel de colesterol por encima de 500, encontrandose estos valores en el grupo de mujeres con efermedades cardiacas.
+
+Entonces, esto indica que para deshacerse de las enfermedades cardíacas siempre es mejor controlar el nivel de colesterol por debajo de 250.
+
+
+Desarrollar una correlación entre diferentes columnas como edad, sexo, cp, trtbps, chol, fbs, restecg, thalachh, exng, oldpeak, slp, caa, thalloutput para encontrar cuál está fuertemente relacionada con qué variable y cuál no tiene ningún vínculo con ninguna variable.
+
+```{r}
+cor_heart <- cor(data[,10:14])
+cor_heart
+corrplot(cor_heart, method="square", type="upper",)
+```
+El gráfico de correlación anterior indica qué tan fuertemente se relaciona una variable con otras variables.
+
++ La magnitud 1 indica una fuerte correlación y los valores negativos indican que no hay correlación.
+
++ Del mismo modo, cuanto más oscuro sea el color, más fuerte será la relación, mientras que con el atenuador el color será más amplio, la relación será 
+
+Sabiendo esto se deduce del gráfico anteror lo siguiente:
+
+1.- La edad está fuertemente relacionada con la presión arterial, el colesterol, mientras que no tiene ninguna relación con la frecuencia cardíaca máxima alcanzada (thalach).
+
+2.- De manera similar, la PA en reposo también se relaciona con el nivel de colesterol (chol) y la depresión del ST inducida por el ejercicio en relación con el reposo (oldpeak).
+
+3.- La frecuencia cardíaca máxima (thalach) no tiene ningún vínculo con la depresión del ST inducida por el ejercicio en relación con el reposo (oldpeak)
+
+
+
+```{r}
+# Crear el gráfico de barras apiladas
+ggplot(heart, aes(x = output, fill = sex)) +
+  geom_bar(position = "stack") +
+  labs(title = "Distribución de enfermedades cardíacas",
+       x = "Enfermedades cardíacas",
+       y = "Cantidad")
+
+```
 
 
 ```{r}
@@ -82,5 +333,115 @@ hist(heart$age)
 ```
 
 
+
+## OUTLIERS
+
+Un diagrama de caja (o diagrama de caja y bigotes) muestra la distribución de datos cuantitativos de una manera que facilita las comparaciones entre variables. El cuadro muestra los cuartiles del conjunto de datos mientras que los bigotes se extienden para mostrar el resto de la distribución. (también conocido como diagrama de caja y bigotes) es una forma estandarizada de mostrar la distribución de datos basada en el resumen de cinco números:
+
++ Mínimo
++ Primer cuartil
++ Mediana
++ Tercer cuartil
++ Máximo
+
+En el diagrama de caja más simple, el rectángulo central abarca desde el primer cuartil hasta el tercer cuartil (el rango intercuartil o IQR). Un segmento dentro del rectángulo muestra la mediana y los "bigotes" encima y debajo del cuadro muestran las ubicaciones del mínimo y el máximo.
+
+
++ **Edad (age)**
+
 ```{r}
+summary(data$age)
+boxplot(data$age, main="Edad (age)")
 ```
+En este gráfico se muestra que la variable edad no contienes valores atípicos ya que todos los valores se encuentrar en el rango de 29 - 77 como valores minimo y máximo. La edad media es de 55 años.
+
++ **Presión arterial en reposo(trtbps)**
+
+```{r}
+summary(data$trtbps)
+boxplot(data$trtbps, main="Presión arterial en reposo(trtbps)")
+```
+En el caso de la variable trtbps encontramos valores atípico  con presiones arteriales eb reposo por encima de 170 llegando a encontrar un valor máximo de 200  mm Hg. No se encuentran valores extremos en la cola inferior. Los valores atípicos son:
+
+```{r}
+x <- boxplot.stats(data$trtbps)$out
+idx <- which(data$trtbps %in% x)
+sort(data$trtbps[idx])
+```
++ **colesterol(chol)**
+
+```{r}
+summary(data$chol)
+a <- boxplot(data$chol, main="colesterol(chol)")
+```
+
+
+```{r}
+x <- boxplot.stats(data$chol)$out
+idx <- which(data$chol %in% x)
+sort(data$chol[idx])
+```
+
+La variables colesterol (chol) presenta 5 valores extremos superiores a 360 destacando un valor máximo muy por encima de 360 que es 564. Este valor es mucho mayor que los demás valores atípicos encontrados en esta variable y se debería eliminar.
+
+```{r}
+data$chol[idx]
+
+```
++ **Frecuencia cardiaca máxima(thalachh)**
+
+```{r}
+summary(data$thalachh)
+a <- boxplot(data$thalachh, main="Frecuencia cardiaca máxima(thalachh)")
+```
+```{r}
+x <- boxplot.stats(data$thalachh)$out
+idx <- which(data$thalachh %in% x)
+sort(data$thalachh[idx])
+```
+Para la frecuencia cardiaca máxima solo encontramos un valor extremo en la parte inferior con un valor de 71. Al tratarse de un único valor se debería eliminar.
+
++ **Frecuencia cardiaca máxima(oldpeak)**
+
+```{r}
+summary(data$oldpeak)
+a <- boxplot(data$oldpeak, main="Depresión del ST inducida por ejercicio(oldpeak)")
+```
+
+```{r}
+x <- boxplot.stats(data$oldpeak)$out
+idx <- which(data$oldpeak %in% x)
+sort(data$oldpeak[idx])
+```
+Esta variable presenta 5 valores extremos ya que están por encima del valor 4 siendo el mayor valor de 6,2.
+
+
+
+
+
+
+
+
+
+```{r}
+# Crear el gráfico de caja
+ggplot(heart, aes(x = output, y = age)) +
+  geom_boxplot(fill = "lightblue", color = "blue") +
+  labs(title = "Distribución de la probabilidad de infarto según la edad",
+       x = "Probabilidad de infarto",
+       y = "Edad") +
+  theme_minimal()
+```
+
+
+
+```{r}
+# Crear el gráfico de caja
+ggplot(heart, aes(x = output, y = restecg, fill = sex)) +
+  geom_boxplot(fill = "lightblue", color = "blue") +
+  labs(title = "Distribución de los resultados del electrocardiograma en reposo",
+       x = "Probabilidad de infarto",
+       y = "Electrocardiograma en reposo") +
+  theme_minimal()
+```
+
