@@ -3,15 +3,19 @@ title: "DataCleaningHeartAttack"
 author: "Maria Blanco González-Mohíno y Eloisa Baquero Candau"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes
+    toc_depth: '2'
+  word_document:
+    toc: yes
+    toc_depth: '2'
   html_document:
     highlight: default
     number_sections: yes
     theme: cosmo
     toc: yes
     toc_depth: 2
-  pdf_document:
-    toc: yes
-    toc_depth: '2'
 ---
 
 \newpage
@@ -80,7 +84,7 @@ Este conjunto de datos pretende elaborar un modelo predictivo y responder a la p
 ## Carga del archivo
 
 ```{r}
-heart <- read_csv("../data/heart.csv", show_col_types = FALSE)
+heart <- read_csv("../data/raw/heart.csv", show_col_types = FALSE)
 head(heart, 5)
 ```
 
@@ -559,6 +563,8 @@ resultados.shapiro$p.value
 
 La idea es simple, si el valor de probabilidad (p-value) que obtenemos por la prueba es menor a al nivel de significancia (0.05) diremos que nuestros datos no siguen una distribución normal. Si el valor de probabilidad es mayor a 0.05, diremos que nuestros datos sí siguen una distribución normal.
 
+Adicionalmente, se va a realizar el método shapiro-wilk, el cuál se utiliza para muestras de menos de 50. Resulta interesante hacerlo debido a que es lo estudiado y se puede ver el contraste entre un método que se ajusta a los datos y uno que no.
+
 ```{r}
 # Test de Kolmogorov-Smirnov
 resultado.normalidad <- lillie.test(data$trtbps) #contraste
@@ -853,12 +859,18 @@ Podemos ver como se han mejorado las métricas de rendimiento con las variables 
 
 Recordando la importancia de este dataset y una de las muchas preguntas que puede responder, vamos a unificar todas las conclusiones que nos permiten responder a esta pregunta en este apartado.
 
-Antes de poder realizar algún análisis o prueba estadística, se procedió con la limpieza de los datos, en la que se eliminaron algunos valores no validos en las columnas **caa** y **thall**, también se descubrieron algunos valores outliers en las columnas **trtbps**, **chol**, **thalachh** y **oldpeak**, puediendo estos ser relevantes en cuanto a tener o no ataques cardíacos.
+Antes de poder realizar algún análisis o prueba estadística, se procedió con la limpieza de los datos, en la que se eliminaron algunos valores no válidos en las columnas **caa** y **thall**, también se descubrieron algunos valores outliers en las columnas **trtbps**, **chol**, **thalachh** y **oldpeak**, pudiendo estos ser relevantes en cuanto a tener o no ataques cardíacos.
 
 Para poder comprender mejor la naturaleza y distribución de los datos se visualizaron algunas variables de interés, con la descripción detallada de cada una de las variables que componen el conjunto de datos.
 
-Se realizó también un análisis de la normalidad, tanto visual como estadístico, donde se pudo comprobar la no normalidad de las variables, aunque, se puede asumir la normalidad por el teorema del límite cental. También se realiza un análisis estadístico de la homogeneidad de varianzas, donde se indicó la heterogeneidad de varianza.
+Se realizó también un análisis de la normalidad, tanto visual como estadístico, donde se pudo comprobar la no normalidad de las variables, aunque, se puede asumir la normalidad por el teorema del límite central. También se realizó un análisis estadístico de la homogeneidad de varianzas, donde se indicó la heterogeneidad de varianza.
 
-En cuanto a las pruebas estadísticas, se realizarón pruebas no paramétricas. Primero se realizó la correlación de Pearson, para comprobar relaciones entre variables y como de significativas estas son. En esta correlación se dedujo que **caa**, **cp**, **exng** y **thalach**, son las variables más correlacionadas, mientras que, sorpresivamente, **age** y **sex** no estaban tan correlacionadas como se esperaba. Por esta razón se realizaron dos test, contraste de hipótesis y regresión logística, para comprobar la independencia de estas variables. Como resultado se obtuvo que ambas variables son significativas en en la existencia de ataques al corazón.
+En cuanto a las pruebas estadísticas, se realizaron pruebas no paramétricas. Primero se realizaró la correlación de Pearson, para comprobar relaciones entre variables y como de significativas estas son. En esta correlación se dedujo que **caa**, **cp**, **exng** y **thalach**, son las variables más correlacionadas, mientras que, sorpresivamente, **age** y **sex** no estaban tan correlacionadas como se esperaba. Por esta razón se realizaron dos test, contraste de hipótesis y regresión logística, para comprobar la independencia de estas variables. Como resultado se obtuvo que ambas variables son significativas en la existencia de ataques al corazón.
 
-Por último, para comprobar esta significancia se realizaron múltiples modelos logísticos para comprobar como estas variables afectaban a la variable independiente output. En estos modelos, se pudieron ver las variables clave, como se puntualizó, fueron aquellas con mayor correlación,  **caa**, **cp**, **exng** y **thalach**. Las variables **age** y **sex** pudieron comprobar su relevancia en otro modelo que obtuvo un  incremento en sus métricas. Las variables más débiles también fueron buenas para aumentar la precisión, por lo que se pudo comprobar que también eran significativas. Dadas las dos dimensiones del dataset, no es necesaria la reducción de dimensionalidad, por lo que se puede ver la influencia de cada una de las variables en la variable independiente **output**.
+Por último, para comprobar esta significancia se realizaron múltiples modelos logísticos para comprobar cómo estas variables afectan a la variable independiente output. En estos modelos, se pudieron ver las variables clave, como se puntualizó, fueron aquellas con mayor correlación,  **caa**, **cp**, **exng** y **thalach**. Las variables **age** y **sex** pudieron comprobar su relevancia en otro modelo que obtuvo un  incremento en sus métricas. Las variables más débiles también fueron buenas para aumentar la precisión, por lo que se pudo comprobar que también eran significativas. Dadas las dos dimensiones del dataset, no es necesaria la reducción de dimensionalidad, por lo que se puede ver la influencia de cada una de las variables en la variable independiente **output**.
+
+Datos finales analizados:
+
+```{r}
+write.csv(heart, "../data/processed/heart.csv", row.names = FALSE)
+```
