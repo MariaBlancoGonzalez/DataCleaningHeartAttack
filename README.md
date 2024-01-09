@@ -8,14 +8,19 @@ Este repositorio contiene el código utilizado para el análisis del dataset Dat
 
 ```r
 DataCleaningHeartAttack
-|-- data
-|   |-- heart.csv
-|   |-- o2Saturation.csv
-|
-|-- source
-|   |-- DataCleaningHeartAttack.Rmd
-|   |-- DataCleaningHeartAttack.html
-|   |--DataCleaningHeartAttack.pdf
+.
+├── data/
+│   ├── processed/
+│   │   └── heart.csv
+│   └── raw/
+│       ├── heart.csv
+│       └── o2Saturation.csv
+├── source/
+│   ├── DataCleaningHeartAttack.Rmd
+│   ├── DataCleaningHeartAttack.Rproj
+│   ├── DataCleaningHeartAttack.docx
+│   ├── DataCleaningHeartAttack.html
+│   ├── DataCleaningHeartAttack.pdf
 |
 |-- README.md
 |
@@ -38,7 +43,10 @@ git clone https://github.com/MariaBlancoGonzalez/DataCleaningHeartAttack
 * Kaggle: https://www.kaggle.com/datasets/rashikrahmanpritom/heart-attack-analysis-prediction-dataset/data
 * Fuente de la que Kaggle saca los datos: https://archive.ics.uci.edu/dataset/45/heart+disease
 
-## Autores:
+## Contribuyentes
+
+* María Blanco González-Mohíno
+* Eloisa Baquero Candau
 
 * María Blanco González-Mohíno
 * Eloisa Baquero Candau
