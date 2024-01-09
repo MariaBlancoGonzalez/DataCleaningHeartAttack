@@ -14,6 +14,7 @@ output:
     toc_depth: '2'
 ---
 
+\newpage
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -28,11 +29,9 @@ library(corrplot)
 library(ggplot2)
 library(ggthemes)
 
-# PCA
-library(FactoMineR)
+# Normalidad 
 library(nortest)
 ```
-
 
 # Descripción del dataset
 
@@ -107,7 +106,7 @@ skim(heart)
 Enfocandonos en la naturaleza del dataset, hay algunos casos especiales que también se consideraran valores nulos. La variable "caa" puede tener valores entre [0-3], el resto serán considerados nulos o no válidos.
 
 ```{r}
-cat("Elementos no validos en la columna caa:", sum(heart$caa < 0 | heart$caa >3))
+cat("Elementos no válidos en la columna caa:", sum(heart$caa < 0 | heart$caa >3))
 ```
 Se observan 5 valores nulos en esta columna. Debido a que no es un número elevado se considera la eliminación de esas filas.
 
@@ -208,8 +207,6 @@ sort(heart$oldpeak[idx])
 ```
 
 Esta variable presenta 5 valores extremos ya que están por encima del valor 4 siendo el mayor valor de 6,2.
-
-
 
 
 ## Visualización de variables de interes
@@ -352,7 +349,6 @@ Los datos anteriores cuantifican que el 54,45% de la población está diagnostic
 Vamos a comprobar como se distribuye los grupos de edad en el conjunto de datos.
 
 ```{r}
-# TODO -> yo lo haría sin filtrar el número mínimo de ataques porque no es que no haya, es que no hay 10 mínimo, podríamos hacer una amplificación de los datos y ponerla debajo para ver la franja de edad con más problemas
 data %>%
   group_by(age)%>%
   count()%>%
@@ -449,8 +445,8 @@ ggplot(heart, aes(x = output, y = chol)) +
 
 
 
-# Análisis estadistico
 
+# Análisis estadistico
 ## Comprobación de la normalidad
 
 
@@ -469,7 +465,6 @@ legend("topright", c("curva observada", "curva (normal) teórica"), lty = 1, lwd
 
 qqnorm(data$age,  colnames(data$age))
 qqline(data$age, col= "red")
-
 ```
 
 ```{r}
@@ -482,7 +477,6 @@ legend("topright", c("curva observada", "curva (normal) teórica"), lty = 1, lwd
 
 qqnorm(data$trtbps,  colnames(data$trtbps))
 qqline(data$trtbps, col= "red")
-
 ```
 
 
@@ -528,7 +522,7 @@ qqline(data$oldpeak, col= "red")
 
 ```
 
-**Interpretación del gráfico:**
+**Interpretación de los gráficos:**
 
 + *age:* En el gráfico podemos observar como los puntos de la muestra se representan prácticamente sobre la línea que indica la distribución normal teórica, separándose un poco por los extremos, sobre todo por el extremo superior. Esto significa que podemos asumir normalidad.
 
@@ -560,8 +554,6 @@ resultado.normalidad$p.value
 resultados.shapiro <- shapiro.test(data$age)
 resultados.shapiro
 resultados.shapiro$p.value
-
-
 ```
 
 
@@ -594,7 +586,6 @@ resultados.shapiro$p.value
 ```
 
 ```{r}
-
 # Test de Kolmogorov-Smirnov
 resultado.normalidad <- lillie.test(data$thalachh) #contraste
 resultado.normalidad
@@ -616,10 +607,7 @@ resultado.normalidad$p.value
 resultados.shapiro <- shapiro.test(data$oldpeak)
 resultados.shapiro
 resultados.shapiro$p.value
-
 ```
-
-
 
 **Interpretación del gráfico:**
 
@@ -634,6 +622,17 @@ resultados.shapiro$p.value
 + *oldpeak:* El valor de p-value obtenido en las pruebas es de 2.264788e-28 para Kolmogorov-Smirnov y de 8.183378e-17 para Shapiro-Wilk. Ambos resultado presentan un p-values por debajo del nivel de significancia por lo que se rechaza la hipótesis nula y se concluye que los datos no cuentan con una distribución normal.
 
 Aunque en los test de normalidad ninguna de las variables sigue una distribución normal, asumimos normalidad por el **teorema del límite central**, dado que el tamaño de las muestras es suficientemente grade (mayor de 30) conteniendo un total de 296 observaciones. Por tanto asumimos que siguen distribuciones normales.
+
+## Comprobación de la homogeneidad de varianzas
+
+Aunque asumimos la normalidad por el teorema del límite central, para calcular la homogeneidad de las varianzas se va a utilizar el test de Filigner-Killeen, es un test no paramétrico que compara las varianzas centrandose en la mediana. Se suele utilizar cuando no se cumple la condición de normalidad.
+
+```{r}
+heartData_numeric<- heart %>% select_if(is.numeric)
+fligner.test(x = heartData_numeric)
+```
+
+Como se puede observar no se cumple la condición de homogeneidad de varianzas donde p>0.05, por lo que no se aplicarán pruebas paramétricas como podias ser t-Student.
 
 ## Pruebas estadísticas
 
@@ -668,7 +667,6 @@ A continuación, se desarrolla una correlación con enfoque en la variable outpu
 heart$output <- as.numeric(as.character(heart$output))
 cor_heart_output <- cor(heart)
 cor_heart_output <- round(cor_heart_output, 2)
-cor_heart_output
 corrplot(cor_heart_output, method = "square", type = "upper")
 ```
 
@@ -759,11 +757,12 @@ modelo_logistico.basic <- glm(output ~ caa, data = train,
                       family = "binomial"(link=logit))
 summary(modelo_logistico.basic)
 ```
+
 ```{r}
 positive <- sum(test$output==1)
 negative <- sum(test$output==0)
 
-# Calculo de métricas de rendimiento
+# Función para el cálculo de métricas de rendimiento
 calcular_metricas <- function(modelo, threshold = 0.5) {
   prediccion <- predict(modelo, test, type="response")
   pred_class <- ifelse(prediccion > threshold, 1, 0)
@@ -834,10 +833,32 @@ modelo_logistico.complex <- calcular_metricas(modelo_logistico.complex)
 
 Se puede observar como con estas variables se realiza una mejora de la precisión del modelo, aumentando la sensitividad o recall y la especificidad, obtenemos un modelo con bastante precisión en cuanto a la clasificación de pacientes con mayor riesgo de ocurrencia de ataque en función de variables clave.
 
+**Modelo añadiendo resto de variables**
+
+Visto que este dataset no tiene un número elevado de muestras y la complejidad del modelo no es elevada, por lo que no se tiene porque acudir a técnicas de reducción de características, se van a introducir en un último modelo el resto de variables con correlaciones más debil
+
+```{r}
+modelo_logistico.complet <- glm(output ~ caa + cp + thalachh + exng + thall + oldpeak + slp + age + sex + trtbps + chol + fbs + restecg, data = train,
+                      family = "binomial"(link=logit))
+summary(modelo_logistico.complet)
+```
+
+```{r}
+modelo_logistico.complet <- calcular_metricas(modelo_logistico.complet)
+```
+
+Podemos ver como se han mejorado las métricas de rendimiento con las variables con correlación más débiles. Parece ser que es un buen modelo. También podemos ver como todas las variables han tenido relativa relevancia sobre la variable **output**.
+
 # Conclusiones
 
+Recordando la importancia de este dataset y una de las muchas preguntas que puede responder, vamos a unificar todas las conclusiones que nos permiten responder a esta pregunta en este apartado.
 
+Antes de poder realizar algún análisis o prueba estadística, se procedió con la limpieza de los datos, en la que se eliminaron algunos valores no validos en las columnas **caa** y **thall**, también se descubrieron algunos valores outliers en las columnas **trtbps**, **chol**, **thalachh** y **oldpeak**, puediendo estos ser relevantes en cuanto a tener o no ataques cardíacos.
 
+Para poder comprender mejor la naturaleza y distribución de los datos se visualizaron algunas variables de interés, con la descripción detallada de cada una de las variables que componen el conjunto de datos.
 
+Se realizó también un análisis de la normalidad, tanto visual como estadístico, donde se pudo comprobar la no normalidad de las variables, aunque, se puede asumir la normalidad por el teorema del límite cental. También se realiza un análisis estadístico de la homogeneidad de varianzas, donde se indicó la heterogeneidad de varianza.
 
+En cuanto a las pruebas estadísticas, se realizarón pruebas no paramétricas. Primero se realizó la correlación de Pearson, para comprobar relaciones entre variables y como de significativas estas son. En esta correlación se dedujo que **caa**, **cp**, **exng** y **thalach**, son las variables más correlacionadas, mientras que, sorpresivamente, **age** y **sex** no estaban tan correlacionadas como se esperaba. Por esta razón se realizaron dos test, contraste de hipótesis y regresión logística, para comprobar la independencia de estas variables. Como resultado se obtuvo que ambas variables son significativas en en la existencia de ataques al corazón.
 
+Por último, para comprobar esta significancia se realizaron múltiples modelos logísticos para comprobar como estas variables afectaban a la variable independiente output. En estos modelos, se pudieron ver las variables clave, como se puntualizó, fueron aquellas con mayor correlación,  **caa**, **cp**, **exng** y **thalach**. Las variables **age** y **sex** pudieron comprobar su relevancia en otro modelo que obtuvo un  incremento en sus métricas. Las variables más débiles también fueron buenas para aumentar la precisión, por lo que se pudo comprobar que también eran significativas. Dadas las dos dimensiones del dataset, no es necesaria la reducción de dimensionalidad, por lo que se puede ver la influencia de cada una de las variables en la variable independiente **output**.
