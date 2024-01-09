@@ -28,8 +28,8 @@ DataCleaningHeartAttack
 
 Como podemos observar este proyecto esta dividido en varias carpetas y componentes, a continuación, los estudiaremos en detalle:
 
-* Carpeta **data** -> contiene los archivos de datos **heart.csv** y **o2Saturation.csv** extraidos de Kaggle.
-* Carpeta **source** -> contiene el código fuente del proyecto en R, tanto archivos propios del proyecto en R como su salida en html y pdf.
+* Carpeta **data** -> contiene los archivos de datos **heart.csv** y **o2Saturation.csv** extraidos de Kaggle en la carpeta **raw**. También contiene otra subcarpeta llamada **processed** con el archivo final tras la limpieza.
+* Carpeta **source** -> contiene el código fuente del proyecto en R, tanto archivos propios del proyecto en R como su salida en html, pdf y word.
 
 ## Instrucciones de instalación y ejecución
 **1.- Clona el repositorio en tu máquina local**
