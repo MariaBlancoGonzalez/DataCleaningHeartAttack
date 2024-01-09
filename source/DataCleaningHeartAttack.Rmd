@@ -30,6 +30,7 @@ library(ggthemes)
 
 # PCA
 library(FactoMineR)
+library(nortest)
 ```
 
 
@@ -77,11 +78,14 @@ Este conjunto de datos pretende elaborar un modelo predictivo y responder a la p
 
 # Exploración de los datos
 
+## Carga del archivo
+
 ```{r}
 heart <- read_csv("../data/heart.csv", show_col_types = FALSE)
 head(heart, 5)
 ```
 
+## Estructura de los datos
 
 ```{r}
 str(heart)
@@ -95,7 +99,120 @@ summary(heart)
 skim(heart)
 ```
 
-## Convertir las variables a factor
+
+# Limpieza de datos
+
+## Búsqueda de valores nulos o no válidos
+
+Enfocandonos en la naturaleza del dataset, hay algunos casos especiales que también se consideraran valores nulos. La variable "caa" puede tener valores entre [0-3], el resto serán considerados nulos o no válidos.
+
+```{r}
+cat("Elementos no validos en la columna caa:", sum(heart$caa < 0 | heart$caa >3))
+```
+Se observan 5 valores nulos en esta columna. Debido a que no es un número elevado se considera la eliminación de esas filas.
+
+```{r}
+heart <- heart[!(heart$caa < 0 | heart$caa > 3), ]
+dim(heart)
+```
+
+La variable thall, debería comprender valores entre 1 y 3.
+```{r}
+numero_apariciones <- table(heart$thall)
+heart <- heart[!(heart$thall < 1 | heart$thall > 3), ]
+dim(heart)
+```
+
+## Outliers
+
+Un diagrama de caja (o diagrama de caja y bigotes) muestra la distribución de datos cuantitativos de una manera que facilita las comparaciones entre variables. El cuadro muestra los cuartiles del conjunto de datos mientras que los bigotes se extienden para mostrar el resto de la distribución. (también conocido como diagrama de caja y bigotes) es una forma estandarizada de mostrar la distribución de datos basada en el resumen de cinco números:
+
++ Mínimo
++ Primer cuartil
++ Mediana
++ Tercer cuartil
++ Máximo
+
+En el diagrama de caja más simple, el rectángulo central abarca desde el primer cuartil hasta el tercer cuartil (el rango intercuartil o IQR). Un segmento dentro del rectángulo muestra la mediana y los "bigotes" encima y debajo del cuadro muestran las ubicaciones del mínimo y el máximo.
+
+
++ **Edad (age)**
+
+```{r}
+summary(heart$age)
+boxplot(heart$age, main="Edad (age)")
+```
+
+En este gráfico se muestra que la variable edad no contiene valores atípicos ya que todos los valores se encuentrar en el rango de 29 - 77 como valores minimo y máximo. La edad media es de 55 años.
+
++ **Presión arterial en reposo (trtbps)**
+
+```{r}
+summary(heart$trtbps)
+boxplot(heart$trtbps, main="Presión arterial en reposo(trtbps)")
+```
+
+En el caso de la variable trtbps encontramos valores atípico  con presiones arteriales en reposo por encima de 170 llegando a encontrar un valor máximo de 200  mm Hg. No se encuentran valores extremos en la cola inferior. Los valores atípicos son:
+
+```{r}
+x <- boxplot.stats(heart$trtbps)$out
+idx <- which(heart$trtbps %in% x)
+sort(heart$trtbps[idx])
+```
++ **colesterol (chol)**
+
+```{r}
+summary(heart$chol)
+a <- boxplot(heart$chol, main="colesterol(chol)")
+```
+
+
+```{r}
+x <- boxplot.stats(heart$chol)$out
+idx <- which(heart$chol %in% x)
+sort(heart$chol[idx])
+```
+
+La variables colesterol (chol) presenta 4 valores extremos superiores a 360 destacando un valor máximo muy por encima de 360 que es 564. Este valor es mucho mayor que los demás valores atípicos encontrados en esta variable y se debería eliminar.
+
+```{r}
+heart$chol[idx]
+
+```
+
++ **Frecuencia cardiaca máxima (thalachh)**
+
+```{r}
+summary(heart$thalachh)
+a <- boxplot(heart$thalachh, main="Frecuencia cardiaca máxima(thalachh)")
+```
+```{r}
+x <- boxplot.stats(heart$thalachh)$out
+idx <- which(heart$thalachh %in% x)
+sort(heart$thalachh[idx])
+```
+
+Para la frecuencia cardiaca máxima solo encontramos un valor extremo en la parte inferior con un valor de 71. Al tratarse de un único valor se debería eliminar.
+
++ **Depresión del ST(oldpeak)**
+
+```{r}
+summary(heart$oldpeak)
+a <- boxplot(heart$oldpeak, main="Depresión del ST inducida por ejercicio(oldpeak)")
+```
+
+```{r}
+x <- boxplot.stats(heart$oldpeak)$out
+idx <- which(heart$oldpeak %in% x)
+sort(heart$oldpeak[idx])
+```
+
+Esta variable presenta 5 valores extremos ya que están por encima del valor 4 siendo el mayor valor de 6,2.
+
+
+
+
+## Visualización de variables de interes
 
 + **Conversión de datos (Será útil en la visualización de datos).**
 
@@ -124,140 +241,6 @@ heart <- heart %>%
     mutate(output = as.factor(output))
 ```
 
-# Limpieza de datos
-
-## Búsqueda de valores nulos o no válidos
-
-Enfocandonos en la naturaleza del dataset, hay algunos casos especiales que también se consideraran valores nulos. La variable "caa" puede tener valores entre [0-3], el resto serán considerados nulos o no válidos.
-
-```{r}
-cat("Elementos no validos en la columna caa:", sum(heart$caa < 0 | heart$caa >3))
-```
-Se observan 5 valores nulos en esta columna. Debido a que no es un número elevado se considera la eliminación de esas filas.
-
-```{r}
-heart <- heart[!(heart$caa < 0 | heart$caa > 3), ]
-dim(heart)
-```
-
-La variable thall, debería comprender valores entre 1 y 3.
-```{r}
-numero_apariciones <- table(heart$thall)
-heart <- heart[!(heart$thall < 1 | heart$thall > 3), ]
-dim(heart)
-```
-## Outliers
-
-
-Un diagrama de caja (o diagrama de caja y bigotes) muestra la distribución de datos cuantitativos de una manera que facilita las comparaciones entre variables. El cuadro muestra los cuartiles del conjunto de datos mientras que los bigotes se extienden para mostrar el resto de la distribución. (también conocido como diagrama de caja y bigotes) es una forma estandarizada de mostrar la distribución de datos basada en el resumen de cinco números:
-
-+ Mínimo
-+ Primer cuartil
-+ Mediana
-+ Tercer cuartil
-+ Máximo
-
-En el diagrama de caja más simple, el rectángulo central abarca desde el primer cuartil hasta el tercer cuartil (el rango intercuartil o IQR). Un segmento dentro del rectángulo muestra la mediana y los "bigotes" encima y debajo del cuadro muestran las ubicaciones del mínimo y el máximo.
-
-
-+ **Edad (age)**
-
-```{r}
-summary(data$age)
-boxplot(data$age, main="Edad (age)")
-```
-
-En este gráfico se muestra que la variable edad no contiene valores atípicos ya que todos los valores se encuentrar en el rango de 29 - 77 como valores minimo y máximo. La edad media es de 55 años.
-
-+ **Presión arterial en reposo (trtbps)**
-
-```{r}
-summary(data$trtbps)
-boxplot(data$trtbps, main="Presión arterial en reposo(trtbps)")
-```
-
-En el caso de la variable trtbps encontramos valores atípico  con presiones arteriales en reposo por encima de 170 llegando a encontrar un valor máximo de 200  mm Hg. No se encuentran valores extremos en la cola inferior. Los valores atípicos son:
-
-```{r}
-x <- boxplot.stats(data$trtbps)$out
-idx <- which(data$trtbps %in% x)
-sort(data$trtbps[idx])
-```
-+ **colesterol (chol)**
-
-```{r}
-summary(data$chol)
-a <- boxplot(data$chol, main="colesterol(chol)")
-```
-
-
-```{r}
-x <- boxplot.stats(data$chol)$out
-idx <- which(data$chol %in% x)
-sort(data$chol[idx])
-```
-
-La variables colesterol (chol) presenta 4 valores extremos superiores a 360 destacando un valor máximo muy por encima de 360 que es 564. Este valor es mucho mayor que los demás valores atípicos encontrados en esta variable y se debería eliminar.
-
-```{r}
-data$chol[idx]
-
-```
-+ **Frecuencia cardiaca máxima (thalachh)**
-
-```{r}
-summary(data$thalachh)
-a <- boxplot(data$thalachh, main="Frecuencia cardiaca máxima(thalachh)")
-```
-```{r}
-x <- boxplot.stats(data$thalachh)$out
-idx <- which(data$thalachh %in% x)
-sort(data$thalachh[idx])
-```
-
-Para la frecuencia cardiaca máxima solo encontramos un valor extremo en la parte inferior con un valor de 71. Al tratarse de un único valor se debería eliminar.
-
-+ **Frecuencia cardiaca máxima(oldpeak)**
-
-```{r}
-summary(data$oldpeak)
-a <- boxplot(data$oldpeak, main="Depresión del ST inducida por ejercicio(oldpeak)")
-```
-
-```{r}
-x <- boxplot.stats(data$oldpeak)$out
-idx <- which(data$oldpeak %in% x)
-sort(data$oldpeak[idx])
-```
-
-Esta variable presenta 5 valores extremos ya que están por encima del valor 4 siendo el mayor valor de 6,2.
-
-
-
-```{r}
-# Crear el gráfico de caja
-ggplot(heart, aes(x = output, y = age)) +
-  geom_boxplot(fill = "lightblue", color = "blue") +
-  labs(title = "Distribución de la probabilidad de infarto según la edad",
-       x = "Probabilidad de infarto",
-       y = "Edad") +
-  theme_minimal()
-```
-
-
-
-```{r}
-# Crear el gráfico de caja
-ggplot(heart, aes(x = output, y = restecg, fill = sex)) +
-  geom_boxplot(fill = "lightblue", color = "blue") +
-  labs(title = "Distribución de los resultados del electrocardiograma en reposo",
-       x = "Probabilidad de infarto",
-       y = "Electrocardiograma en reposo") +
-  theme_minimal()
-```
-
-
-## Visualización de variables de interes
 
 ### Análisis univariante
 
@@ -274,7 +257,7 @@ bp5 <- ggplot(data,aes(x=factor(exng)))+geom_bar(fill = "black")+xlab("exng")
 bp6 <- ggplot(data,aes(x=factor(slp)))+geom_bar(fill = "black")+xlab("slp")
 bp7 <- ggplot(data,aes(x=factor(caa)))+geom_bar(fill = "black")+xlab("caa")
 bp8 <- ggplot(data,aes(x=factor(thall)))+geom_bar(fill = "black")+xlab("thall")
-grid.arrange(bp1,bp2,bp3,bp4,bp5,bp6,bp7,bp8, nrow=3)
+grid.arrange(bp1,bp2,bp3,bp4,bp5,bp6,bp7,bp8, nrow=2)
 ```
 
 A continuación calculamos la frecuencia de cada variable categórica.
@@ -296,20 +279,20 @@ prop.table(table(data$thall))
 
 ```{r}
 den_age <- density(data$age)
-hist1 <- hist(data$age, main = "Histograma y densidad de la edad de los pacientes", col = "gold", freq = FALSE, ylim = c(0,0.050))
+hist1 <- hist(data$age, main = "Histograma y densidad de la edad de los pacientes", col = "gold", freq = FALSE)
 lines(den_age, col = "red", lwd=2)
 
 ```
 ```{r}
 den_trtbps <- density(data$trtbps)
-hist2 <- hist(data$trtbps, main = "Histograma y densidad de la frecuencia cardiaca máxima", col = "gold", freq = FALSE, ylim = c(0,0.050))
+hist2 <- hist(data$trtbps, main = "Histograma y densidad de la frecuencia cardiaca máxima", col = "gold", freq = FALSE)
 lines(den_trtbps, col = "red", lwd=2)
 
 ```
 
 ```{r}
 den_chol <- density(data$chol)
-hist3 <- hist(data$chol, main = "Histograma y densidad del colecterol", col = "gold", freq = FALSE, ylim = c(0,0.050))
+hist3 <- hist(data$chol, main = "Histograma y densidad del colecterol", col = "gold", freq = FALSE)
 lines(den_chol, col = "red", lwd=2)
 
 ```
@@ -322,30 +305,29 @@ hist3 <- ggplot(data,aes(x=chol))+geom_histogram(bins=15,fill='magenta')
 hist4 <- ggplot(data,aes(x=thalachh))+geom_histogram(bins=15,fill='blue')
 hist5 <- ggplot(data,aes(x=oldpeak))+geom_histogram(bins=15,fill='magenta')
 
-grid.arrange(hist2,hist3,hist4,hist5,nrow=3)
+grid.arrange(hist1,hist2,hist3,hist4,hist5,nrow=3)
 ```
+
+**Interpretación del gráfico:**
+
++ *age:* La edad sigue una distribución casi normal en cuando al número de ataques sufridos. Parece que hay una franja de edad determinante en cuando al número de estas dolencias. En este caso, valores por debajo de 40 podrían considerarse outliers, un caso en torno a los 29 años parece ser un valor atípico.
+
+Vemos como en el grupo de edad comprendido entre 56 y 60 años, los registros asumen un mayor número de ataques sufridos, estos pueden deberse a la vejez y necesidad de chequeos de salud regulares.
+
++ *trtbps:* Esta variable parece que no sigue una distribución normal concentrandose los valores más frecuentes entre 110 y 140. también vemos un pico en el valor 150.
+
++ *chol:* El colecterol se distribuye siguiendo una distribución normal pero podemos ver como existen algunos valores extremos en torno al valor 600
+
++ *thalachh:* Esta variable se distribuye siguiendo una distribución normal desplazada a la derecha.
+
++ *oldpeak:* Esta variable se aprecia perfectamente que presenta un pico en el valor 0.
 
 
 + **Variable output**
 
-A continuación, vamos a analizar la variable "ouput".
+A continuación, vamos a analizar la variable "ouput".Vamos a obtener el gráfico de barras para comparar cuántas personas tienen o no enfermedades cardíacas
 
 ```{r}
-# Variable output
-heart %>%
-  count(output) %>%
-  ggplot() +        
-  aes(x = output, y = n) +
-  labs(title = "Gráfico de barras para la variable 0utput") + 
-  ylab("Frecuencia absoluta") +
-  geom_bar(aes(fill = output), stat = "identity") +
-  geom_text(aes(label = n), vjust = 0, size = 4)
-```
-
-Gráfico de barras para comparar cuántas personas tienen o no enfermedades cardíacas
-
-```{r}
-# TODO -> yo dejaria solo una de estas gráficas, no parece un poco repetitivo?
 ggplot(data , aes(x=output,fill=output))+
    geom_bar()+
    xlab("Enfermedades cardiacas")+
@@ -359,24 +341,15 @@ En este conjunto de datos existe mayor cantidad de personas que  han sufrido enf
 Ahora vamos a encontrar la proporción de personas para cuantificar cuántas de ellas tienen enfermedades cardíacas y cuántas no.
 
 ```{r}
-#Finding the proportion of the people to quantify how many of them are having heart disease and how many are not
 prop.table(table(data$output))
 ```
+
 Los datos anteriores cuantifican que el 54,45% de la población está diagnosticada con alguna enfermedad cardíaca mientras que el 45,54% de la población no padece ningún tipo de enfermedad cardíaca. Además, esta variable presenta datos balanceados.
 
+
++ **Variable age**
+
 Vamos a comprobar como se distribuye los grupos de edad en el conjunto de datos.
-
-```{r}
-data %>%
-  group_by(age)%>%
-  count()%>%
-  filter(n>10)%>%
-  ggplot()+
-  geom_col(aes(age,n), fill= 'brown')+
-  ggtitle(" Distribución de la variable Edad")
-```
-
-Existe una gran brecha entre las edades de 45 a 50 años, es posible que las personas en este grupo de edad estén ocupadas y no tengan tiempo para hacerse un chequeo de rutina o puede deberse a su carga de trabajo queman más calorías, por lo que no tuvieron que acudir al médico. Chequeos, donde, como en el grupo de edad entre 56 y 60 años, los participantes pueden deberse a la vejez y necesitan chequeos de salud regulares.
 
 ```{r}
 # TODO -> yo lo haría sin filtrar el número mínimo de ataques porque no es que no haya, es que no hay 10 mínimo, podríamos hacer una amplificación de los datos y ponerla debajo para ver la franja de edad con más problemas
@@ -388,10 +361,11 @@ data %>%
   ggtitle(" Distribución de la variable Edad")
 ```
 
-La edad sigue una distribución casi normal en cuando al número de ataques sufridos. Parece que hay una franja de edad determinante en cuando al número de estas dolencias. En este caso, valores por debajo de 40 podrían considerarse outliers, un caso en torno a los 29 años parece ser un valor atípico.
 
-Vemos como en el grupo de edad comprendido entre 56 y 60 años, los registros asumen un mayor número de ataques sufridos, estos pueden deberse a la vejez y necesidad de chequeos de salud regulares.
 
+### Análisis multivariante
+
++ **Evaluación de la relación entre el diferentes tipos de dolor en el pecho y la presión arterial**
 
 Vamos a Comparar de la "presión arterial" y los "diferentes tipos de dolor en el pecho" entre hombres y mujeres:
 
@@ -425,22 +399,245 @@ data%>%
 Como se muestra en el diagrama de caja anterior, se muestra la relación entre el rango de colesterol y la presencia de enfermedades cardíacas.
 
 En el diagrama:
+
 + Menos de 200 en colecteroles es bueno, más de 240 es un colecterol alto, por lo que puede ser peligroso.
 + Sí significa presencia de enfermedad cardíaca y
 + No significa ausencia de enfermedad cardíaca.
 
 Por tanto podemos deducir:
 
-TODO -> no es al reves? La media de colesterol en personas que no han sufrido un ataque es mayor que las personas q no lo han sufrido, creo
-+ *Sin enfermedad cardíaca:* Aquellos que no han padecido una enfermedad cardíaca tienen un nivel de colesterol promedio por debajo de 250, los hombres tienen menos colesterol, puede deberse a más movimiento físico o menos consumo de alimentos grasos. Además, ninguno de ellos tiene niveles de colesterol elevados.
++ *Sin enfermedad cardíaca:* Aquellos que no han padecido una enfermedad cardíaca tienen un nivel de colesterol promedio por encima de 250, los hombres tienen menos colesterol, puede deberse a más movimiento físico o menos consumo de alimentos grasos. Además, ninguno de ellos tiene niveles de colesterol elevados.
 
 + *Con presencia de enfermedad cardíaca:* Aquellos que tienen enfermedad cardíaca, el promedio de hombres y mujeres tienen niveles de colesterol en el rango inferior a 250, pero algunos hombres y mujeres tienen valores de colesterol muy altos. En los hombres, algunos valores  supera los 300, lo cual no es una buena señal. En las mujeres algunos valores superan los 400 e incluso a algunas se les detectó un nivel de colesterol por encima de 500, encontrandose estos valores en el grupo de mujeres con efermedades cardiacas.
 
 Entonces, esto indica que para deshacerse de las enfermedades cardíacas siempre es mejor controlar el nivel de colesterol por debajo de 250.
 
-# Pruebas estadísticas
 
-## Correlaciones y estudio estadístico
+```{r}
+# Crear el gráfico de caja
+ggplot(heart, aes(x = output, y = age)) +
+  geom_boxplot(fill = "lightblue", color = "blue") +
+  labs(title = "Distribución de la probabilidad de infarto según la edad",
+       x = "Probabilidad de infarto",
+       y = "Edad") +
+  theme_minimal()
+```
+
+
+
+```{r}
+# Crear el gráfico de caja
+ggplot(heart, aes(x = output, y = trtbps)) +
+  geom_boxplot(fill = "lightblue", color = "blue") +
+  labs(title = "Distribución de la presión arterial en reposo",
+       x = "Probabilidad de infarto",
+       y = "Presión arterial en reposo") +
+  theme_minimal()
+```
+
+
+
+```{r}
+# Crear el gráfico de caja
+ggplot(heart, aes(x = output, y = chol)) +
+  geom_boxplot(fill = "lightblue", color = "blue") +
+  labs(title = "Distribución del colesterol",
+       x = "Probabilidad de infarto",
+       y = "Colesterol") +
+  theme_minimal()
+```
+
+
+
+# Análisis estadistico
+
+## Comprobación de la normalidad
+
+
++ **Comprobación visual**
+
+Se pueden emplear visualizaciones de los datos para inspeccionar la normalidad de estos. Para esto podemos usar histogramas, curvas de densidad (comparada con la teórica) así como los gráficos Q-Q.
+
+
+```{r}
+par(mfrow=c(2,2))
+
+hist(data$age, main = "Histograma de la edad", col = "gold",freq = FALSE, xlim = c(20, 90), border = "gray50", xlab = "Edad", ylab = "Densidad")
+lines(density(data$age),col = "red", lwd = 2)
+curve(dnorm(x, mean(data$age), sd(data$age)), lwd = 2, col="blue", add = TRUE)
+legend("topright", c("curva observada", "curva (normal) teórica"), lty = 1, lwd = 2, col = c("red", "blue"), bty = "n", cex = 0.8)
+
+qqnorm(data$age,  colnames(data$age))
+qqline(data$age, col= "red")
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+
+hist(data$trtbps, main = "Histograma de la Presión arterial", col = "gold",freq = FALSE, xlim = c(80, 200), border = "gray50", xlab = "Presión arterial", ylab = "Densidad")
+lines(density(data$trtbps), lwd = 2, col = "red")
+curve(dnorm(x, mean(data$trtbps), sd(data$trtbps)), lwd = 2, col="blue", add = TRUE)
+legend("topright", c("curva observada", "curva (normal) teórica"), lty = 1, lwd = 2, col = c("red", "blue"), bty = "n", cex = 0.8)
+
+qqnorm(data$trtbps,  colnames(data$trtbps))
+qqline(data$trtbps, col= "red")
+
+```
+
+
+
+```{r}
+par(mfrow=c(2,2))
+
+hist(data$chol, main = "Histograma del colesterol", col = "gold",freq = FALSE, xlim = c(80, 600), border = "gray50", xlab = "Colesterol", ylab = "Densidad")
+lines(density(data$chol), lwd = 2, col = "red")
+curve(dnorm(x, mean(data$chol), sd(data$chol)), lwd = 2, col="blue", add = TRUE)
+legend("topright", c("curva observada", "curva (normal) teórica"), lty = 1, lwd = 2, col = c("red", "blue"), bty = "n", cex = 0.8)
+
+qqnorm(data$chol,  colnames(data$chol))
+qqline(data$chol, col= "red")
+
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+
+hist(data$thalachh, main = "Histograma de frecuencia cardiaca máxima", col = "gold",freq = FALSE, border = "gray50", xlab = "FCMax", ylab = "Densidad")
+lines(density(data$thalachh),col = "red", lwd = 2)
+curve(dnorm(x, mean(data$thalachh), sd(data$thalachh)), lwd = 2, col="blue", add = TRUE)
+legend("topright", c("curva observada", "curva (normal) teórica"), lty = 1, lwd = 2, col = c("red", "blue"), bty = "n", cex = 0.8)
+
+qqnorm(data$thalachh,  colnames(data$thalachh))
+qqline(data$thalachh, col= "red")
+
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+
+hist(data$oldpeak, main = "Histograma Depresión del ST", col = "gold",freq = FALSE, border = "gray50", xlab = "Depresión del ST", ylab = "Densidad")
+lines(density(data$oldpeak),col = "red", lwd = 2)
+curve(dnorm(x, mean(data$oldpeak), sd(data$oldpeak)), lwd = 2, col="blue", add = TRUE)
+legend("topright", c("curva observada", "curva (normal) teórica"), lty = 1, lwd = 2, col = c("red", "blue"), bty = "n", cex = 0.8)
+
+qqnorm(data$oldpeak,  colnames(data$oldpeak))
+qqline(data$oldpeak, col= "red")
+
+```
+
+**Interpretación del gráfico:**
+
++ *age:* En el gráfico podemos observar como los puntos de la muestra se representan prácticamente sobre la línea que indica la distribución normal teórica, separándose un poco por los extremos, sobre todo por el extremo superior. Esto significa que podemos asumir normalidad.
+
++ *trtbps:* En el gráfico podemos observar como los puntos de la muestra se representan prácticamente sobre la línea que indica la distribución normal teórica, separándose un poco por los extremos. Esto significa que podemos asumir normalidad.
+
++ *chol:* En el gráfico podemos observar como los puntos de la muestra se representan prácticamente sobre la línea que indica la distribución normal teórica, En el extremo superior hay algunos valores que se separan un poco se la linea que puede deberse a valores extremo que quizas haya que eliminar.Parece que en este caso pdemos asumir normalidad.
+
++ *thalachh:* En el gráfico podemos observar como los puntos de la muestra se representan prácticamente sobre la línea que indica la distribución normal teórica, separándose un poco por los extremos. Esto significa que podemos asumir normalidad.
+
++ *oldpeak:* En el gráfico podemos observar como los puntos de la muestra se representan sobre la linea en la parte central pero los extreno se sapara bastante de la linea presentando asimetría positiva. Esto puede significar que no podemos asumir normalidad.
+
++ **Contraste de normalidad**
+
+Cuando esta normalidad no queda clara mediante métodos visuales se pueden usar pruebas estadísticas que nos den una respuesta menos subjetiva.
+
+Existen varias pruebas para hacer esto, posiblemente las más conocidas son la prueba de Shapiro-Wilk, que se utiliza para muestras pequeña (n < 50) y la prueba de Kolmogorov-Smirnov o normalidad de Lilliefors para muestras grandes (n>50).
+
+La decisión para describir la normalidad de nuestro conjunto de datos estará en función del resultado de un contraste de hipótesis.
+
+**Contraste de normalidad de Lilliefors (función lillie.test de la libreria nortest).**
+
+```{r}
+# Test de Kolmogorov-Smirnov
+resultado.normalidad <- lillie.test(data$age) #contraste
+resultado.normalidad
+resultado.normalidad$p.value
+
+# Test de Shapiro-Wilk
+resultados.shapiro <- shapiro.test(data$age)
+resultados.shapiro
+resultados.shapiro$p.value
+
+
+```
+
+
+La idea es simple, si el valor de probabilidad (p-value) que obtenemos por la prueba es menor a al nivel de significancia (0.05) diremos que nuestros datos no siguen una distribución normal. Si el valor de probabilidad es mayor a 0.05, diremos que nuestros datos sí siguen una distribución normal.
+
+```{r}
+# Test de Kolmogorov-Smirnov
+resultado.normalidad <- lillie.test(data$trtbps) #contraste
+resultado.normalidad
+resultado.normalidad$p.value
+
+# Test de Shapiro-Wilk
+resultados.shapiro <- shapiro.test(data$trtbps)
+resultados.shapiro
+resultados.shapiro$p.value
+
+```
+
+```{r}
+# Test de Kolmogorov-Smirnov
+resultado.normalidad <- lillie.test(data$chol) #contraste
+resultado.normalidad
+resultado.normalidad$p.value
+
+# Test de Shapiro-Wilk
+resultados.shapiro <- shapiro.test(data$chol)
+resultados.shapiro
+resultados.shapiro$p.value
+
+```
+
+```{r}
+
+# Test de Kolmogorov-Smirnov
+resultado.normalidad <- lillie.test(data$thalachh) #contraste
+resultado.normalidad
+resultado.normalidad$p.value
+
+# Test de Shapiro-Wilk
+resultados.shapiro <- shapiro.test(data$thalachh)
+resultados.shapiro
+resultados.shapiro$p.value
+```
+
+```{r}
+# Test de Kolmogorov-Smirnov
+resultado.normalidad <- lillie.test(data$oldpeak) #contraste
+resultado.normalidad
+resultado.normalidad$p.value
+
+# Test de Shapiro-Wilk
+resultados.shapiro <- shapiro.test(data$oldpeak)
+resultados.shapiro
+resultados.shapiro$p.value
+
+```
+
+
+
+**Interpretación del gráfico:**
+
++ *age:* El valor de p-value obtenido en las pruebas es de 0.0002231645 para Kolmogorov-Smirnov y de 0.005798359 para Shapiro-Wilk. Ambos resultado presentan un p-values por debajo del nivel de significancia por lo que se rechaza la hipótesis nula y se concluye que los datos no cuentan con una distribución normal.
+
++ *trtbps:* El valor de p-value obtenido en las pruebas es de 4.683143e-08 para Kolmogorov-Smirnov y de 1.458097e-06 para Shapiro-Wilk. Ambos resultado presentan un p-values por debajo del nivel de significancia por lo que se rechaza la hipótesis nula y se concluye que los datos no cuentan con una distribución normal.
+
++ *chol:* El valor de p-value obtenido en las pruebas es de 0.02542595 para Kolmogorov-Smirnov y de 5.364848e-09 para Shapiro-Wilk. Ambos resultado presentan un p-values por debajo del nivel de significancia por lo que se rechaza la hipótesis nula y se concluye que los datos no cuentan con una distribución normal.
+
++ *thalachh:* El valor de p-value obtenido en las pruebas es de 0.0007944562 para Kolmogorov-Smirnov y de 6.620819e-05 para Shapiro-Wilk. Ambos resultado presentan un p-values por debajo del nivel de significancia por lo que se rechaza la hipótesis nula y se concluye que los datos no cuentan con una distribución normal.
+
++ *oldpeak:* El valor de p-value obtenido en las pruebas es de 2.264788e-28 para Kolmogorov-Smirnov y de 8.183378e-17 para Shapiro-Wilk. Ambos resultado presentan un p-values por debajo del nivel de significancia por lo que se rechaza la hipótesis nula y se concluye que los datos no cuentan con una distribución normal.
+
+Aunque en los test de normalidad ninguna de las variables sigue una distribución normal, asumimos normalidad por el **teorema del límite central**, dado que el tamaño de las muestras es suficientemente grade (mayor de 30) conteniendo un total de 296 observaciones. Por tanto asumimos que siguen distribuciones normales.
+
+## Pruebas estadísticas
+
+### Correlaciones y estudio estadístico
 
 Desarrollar una correlación entre diferentes columnas como edad, sexo, cp, trtbps, chol, fbs, restecg, thalachh, exng, oldpeak, slp, caa, thalloutput para encontrar cuál está fuertemente relacionada con qué variable y cuál no tiene ningún vínculo con ninguna variable.
 
@@ -532,7 +729,7 @@ summary(modelo_logistico.age)
 
 Podemos ver que el valor p asociado con el coeficiente de age es 0.000152. Este valor p es menor que el nivel de significancia 0.05, lo que indica que el coeficiente de age es estadísticamente significativo.
 
-## Regresión logística
+### Regresión logística
 
 En este punto vamos a realizar una serie de regresiones logísticas, empezando desde un modelo básico, creando modelos posteriores para observar la mejora. Para poder estimar de forma más objetiva la precisión del modelo, separaremos el conjunto de datos en dos partes: el conjunto de entrenamiento (training) y el conjunto de prueba (testing). Ajustaremos el modelo de regresión logística con el conjunto de entrenamiento, y evaluaremos la precisión con el conjunto de prueba.
 
@@ -638,3 +835,9 @@ modelo_logistico.complex <- calcular_metricas(modelo_logistico.complex)
 Se puede observar como con estas variables se realiza una mejora de la precisión del modelo, aumentando la sensitividad o recall y la especificidad, obtenemos un modelo con bastante precisión en cuanto a la clasificación de pacientes con mayor riesgo de ocurrencia de ataque en función de variables clave.
 
 # Conclusiones
+
+
+
+
+
+
