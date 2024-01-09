@@ -47,6 +47,3 @@ git clone https://github.com/MariaBlancoGonzalez/DataCleaningHeartAttack
 
 * María Blanco González-Mohíno
 * Eloisa Baquero Candau
-
-* María Blanco González-Mohíno
-* Eloisa Baquero Candau
