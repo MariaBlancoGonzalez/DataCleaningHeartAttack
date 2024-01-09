@@ -1331,6 +1331,10 @@ obtenemos por la prueba es menor a al nivel de significancia (0.05)
 diremos que nuestros datos no siguen una distribución normal. Si el
 valor de probabilidad es mayor a 0.05, diremos que nuestros datos sí
 siguen una distribución normal.</p>
+<p>Adicionalmente, se va a realizar el método shapiro-wilk, el cuál se
+utiliza para muestras de menos de 50. Resulta interesante hacerlo debido
+a que es lo estudiado y se puede ver el contraste entre un método que se
+ajusta a los datos y uno que no.</p>
 <pre class="r"><code># Test de Kolmogorov-Smirnov
 resultado.normalidad &lt;- lillie.test(data$trtbps) #contraste
 resultado.normalidad</code></pre>
@@ -1532,7 +1536,7 @@ respectivamente.</p></li>
 </ul>
 <p>Vista la correlación, a continuación, se va a representar la
 distribución de ataques en función del sexo del paciente.</p>
-<p><strong>Dependencia de variables Age y Output</strong></p>
+<p><strong>Dependencia de variables Sex y Output</strong></p>
 <pre class="r"><code># Crear el gráfico de barras apiladas
 ggplot(data, aes(x = output, fill = sex)) +
   geom_bar(position = &quot;stack&quot;) +
@@ -1645,16 +1649,16 @@ summary(modelo_logistico.basic)</code></pre>
 ## 
 ## Coefficients:
 ##             Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)   0.9391     0.1795   5.232 1.68e-07 ***
-## caa          -1.2012     0.1954  -6.148 7.86e-10 ***
+## (Intercept)   0.9832     0.1812   5.426 5.76e-08 ***
+## caa          -1.2765     0.1966  -6.493 8.44e-11 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 326.32  on 236  degrees of freedom
-## Residual deviance: 274.22  on 235  degrees of freedom
-## AIC: 278.22
+##     Null deviance: 326.69  on 236  degrees of freedom
+## Residual deviance: 265.94  on 235  degrees of freedom
+## AIC: 269.94
 ## 
 ## Number of Fisher Scoring iterations: 4</code></pre>
 <pre class="r"><code>positive &lt;- sum(test$output==1)
@@ -1697,11 +1701,11 @@ modelo_logistico.basic &lt;- calcular_metricas(modelo_logistico.basic)</code></p
 <pre><code>## Matriz de confusion
 ##    pred_class
 ##      0  1
-##   0 21  8
-##   1  5 25
-## Accuracy del modelo: 0.779661 
-## Sensitividad: 0.8333333 
-## Especificidad: 0.7241379</code></pre>
+##   0 18 10
+##   1  9 22
+## Accuracy del modelo: 0.6779661 
+## Sensitividad: 0.7096774 
+## Especificidad: 0.6428571</code></pre>
 <p><strong>Modelo con correlaciones más altas</strong></p>
 <p>Una vez hemos construido un modelo básico vamos a tratar de
 mejorarlo, para ellos vamos a introducir las variables más
@@ -1716,23 +1720,23 @@ summary(modelo_logistico.more_correlated)</code></pre>
 ##     slp, family = binomial(link = logit), data = train)
 ## 
 ## Coefficients:
-##              Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)  1.012738   1.565409   0.647 0.517666    
-## caa         -1.203543   0.255845  -4.704 2.55e-06 ***
-## cp           0.747731   0.194016   3.854 0.000116 ***
-## thalachh     0.013448   0.009671   1.391 0.164337    
-## exng        -0.987166   0.430644  -2.292 0.021888 *  
-## thall       -1.336049   0.325786  -4.101 4.11e-05 ***
-## oldpeak     -0.416825   0.231263  -1.802 0.071484 .  
-## slp          0.681656   0.381610   1.786 0.074057 .  
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)  1.70669    1.69285   1.008  0.31337    
+## caa         -1.23565    0.25105  -4.922 8.57e-07 ***
+## cp           0.61531    0.19438   3.165  0.00155 ** 
+## thalachh     0.01687    0.01005   1.679  0.09322 .  
+## exng        -0.71376    0.45353  -1.574  0.11554    
+## thall       -1.61606    0.34205  -4.725 2.31e-06 ***
+## oldpeak     -0.54233    0.23342  -2.323  0.02016 *  
+## slp          0.41345    0.37621   1.099  0.27177    
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 326.32  on 236  degrees of freedom
-## Residual deviance: 180.48  on 229  degrees of freedom
-## AIC: 196.48
+##     Null deviance: 326.69  on 236  degrees of freedom
+## Residual deviance: 176.20  on 229  degrees of freedom
+## AIC: 192.2
 ## 
 ## Number of Fisher Scoring iterations: 6</code></pre>
 <p>Métricas de este modelo:</p>
@@ -1740,11 +1744,11 @@ summary(modelo_logistico.more_correlated)</code></pre>
 <pre><code>## Matriz de confusion
 ##    pred_class
 ##      0  1
-##   0 24  5
-##   1  1 29
-## Accuracy del modelo: 0.8983051 
-## Sensitividad: 0.9666667 
-## Especificidad: 0.8275862</code></pre>
+##   0 20  8
+##   1  4 27
+## Accuracy del modelo: 0.7966102 
+## Sensitividad: 0.8709677 
+## Especificidad: 0.7142857</code></pre>
 <p>Añadiendo las variables con correlación moderada se ve una mejora en
 el modelo en general. Aumenta la sensitividad o recall, esto quiere
 decir que el modelo predice mejor los positivos reales. Aumenta tambien
@@ -1767,36 +1771,36 @@ summary(modelo_logistico.complex)</code></pre>
 ##     slp + age + sex, family = binomial(link = logit), data = train)
 ## 
 ## Coefficients:
-##               Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)  0.7595818  2.6351651   0.288 0.773157    
-## caa         -1.2333946  0.2807298  -4.394 1.12e-05 ***
-## cp           0.7957659  0.2008418   3.962 7.43e-05 ***
-## thalachh     0.0186595  0.0112073   1.665 0.095924 .  
-## exng        -0.9614776  0.4523287  -2.126 0.033535 *  
-## thall       -1.1914447  0.3300754  -3.610 0.000307 ***
-## oldpeak     -0.3086628  0.2332344  -1.323 0.185702    
-## slp          0.8475473  0.3982554   2.128 0.033325 *  
-## age         -0.0008028  0.0252573  -0.032 0.974642    
-## sex         -1.6622025  0.4964997  -3.348 0.000814 ***
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)  1.077183   2.629891   0.410 0.682105    
+## caa         -1.249446   0.277214  -4.507 6.57e-06 ***
+## cp           0.692949   0.203774   3.401 0.000672 ***
+## thalachh     0.023011   0.011221   2.051 0.040283 *  
+## exng        -0.665937   0.472206  -1.410 0.158460    
+## thall       -1.430331   0.345158  -4.144 3.41e-05 ***
+## oldpeak     -0.474361   0.240104  -1.976 0.048194 *  
+## slp          0.484450   0.386603   1.253 0.210172    
+## age          0.003585   0.025628   0.140 0.888761    
+## sex         -1.652767   0.507961  -3.254 0.001139 ** 
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 326.32  on 236  degrees of freedom
-## Residual deviance: 167.13  on 227  degrees of freedom
-## AIC: 187.13
+##     Null deviance: 326.69  on 236  degrees of freedom
+## Residual deviance: 163.21  on 227  degrees of freedom
+## AIC: 183.21
 ## 
 ## Number of Fisher Scoring iterations: 6</code></pre>
 <pre class="r"><code>modelo_logistico.complex &lt;- calcular_metricas(modelo_logistico.complex)</code></pre>
 <pre><code>## Matriz de confusion
 ##    pred_class
 ##      0  1
-##   0 23  6
-##   1  4 26
+##   0 22  6
+##   1  4 27
 ## Accuracy del modelo: 0.8305085 
-## Sensitividad: 0.8666667 
-## Especificidad: 0.7931034</code></pre>
+## Sensitividad: 0.8709677 
+## Especificidad: 0.7857143</code></pre>
 <p>Se puede observar como con estas variables se realiza una mejora de
 la precisión del modelo, aumentando la sensitividad o recall y la
 especificidad, obtenemos un modelo con bastante precisión en cuanto a la
@@ -1819,39 +1823,39 @@ summary(modelo_logistico.complet)</code></pre>
 ## 
 ## Coefficients:
 ##              Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)  3.117507   2.996061   1.041 0.298091    
-## caa         -1.358490   0.309009  -4.396 1.10e-05 ***
-## cp           0.857433   0.213567   4.015 5.95e-05 ***
-## thalachh     0.024886   0.012099   2.057 0.039707 *  
-## exng        -1.021135   0.480575  -2.125 0.033602 *  
-## thall       -1.174461   0.349749  -3.358 0.000785 ***
-## oldpeak     -0.216298   0.249212  -0.868 0.385434    
-## slp          0.958355   0.418161   2.292 0.021915 *  
-## age          0.023211   0.027501   0.844 0.398673    
-## sex         -1.992321   0.554919  -3.590 0.000330 ***
-## trtbps      -0.025897   0.012057  -2.148 0.031721 *  
-## chol        -0.006401   0.004435  -1.443 0.148886    
-## fbs          0.541777   0.672009   0.806 0.420125    
-## restecg      0.536510   0.401083   1.338 0.181009    
+## (Intercept)  3.203670   3.057388   1.048 0.294710    
+## caa         -1.324439   0.292917  -4.522 6.14e-06 ***
+## cp           0.734036   0.212277   3.458 0.000544 ***
+## thalachh     0.029753   0.012455   2.389 0.016898 *  
+## exng        -0.642865   0.496410  -1.295 0.195310    
+## thall       -1.423389   0.365886  -3.890 0.000100 ***
+## oldpeak     -0.415142   0.252697  -1.643 0.100415    
+## slp          0.618572   0.410896   1.505 0.132215    
+## age          0.024097   0.027196   0.886 0.375592    
+## sex         -1.864266   0.562759  -3.313 0.000924 ***
+## trtbps      -0.032257   0.012915  -2.498 0.012501 *  
+## chol        -0.001969   0.004632  -0.425 0.670771    
+## fbs          0.637390   0.635604   1.003 0.315952    
+## restecg      0.473681   0.409441   1.157 0.247314    
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 326.32  on 236  degrees of freedom
-## Residual deviance: 157.43  on 223  degrees of freedom
-## AIC: 185.43
+##     Null deviance: 326.69  on 236  degrees of freedom
+## Residual deviance: 154.08  on 223  degrees of freedom
+## AIC: 182.08
 ## 
 ## Number of Fisher Scoring iterations: 6</code></pre>
 <pre class="r"><code>modelo_logistico.complet &lt;- calcular_metricas(modelo_logistico.complet)</code></pre>
 <pre><code>## Matriz de confusion
 ##    pred_class
 ##      0  1
-##   0 23  6
-##   1  2 28
-## Accuracy del modelo: 0.8644068 
-## Sensitividad: 0.9333333 
-## Especificidad: 0.7931034</code></pre>
+##   0 22  6
+##   1  3 28
+## Accuracy del modelo: 0.8474576 
+## Sensitividad: 0.9032258 
+## Especificidad: 0.7857143</code></pre>
 <p>Podemos ver como se han mejorado las métricas de rendimiento con las
 variables con correlación más débiles. Parece ser que es un buen modelo.
 También podemos ver como todas las variables han tenido relativa
